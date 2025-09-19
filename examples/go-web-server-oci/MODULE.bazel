@@ -11,6 +11,7 @@ bazel_dep(name = "rules_pkg", version = "1.1.0")
 go = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
 go.download(version = "1.22.6")
 use_repo(go, "go_host_compatible_sdk_label", "go_toolchains", "io_bazel_rules_nogo")
+
 register_toolchains("@go_toolchains//:all")
 
 # OCI toolchains are registered by rules_oci's own MODULE, but we still
@@ -19,12 +20,10 @@ oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "distroless_base",
     image = "gcr.io/distroless/base",
+    digest = "sha256:fa15492938650e1a5b87e34d47dc7d99a2b4e8aefd81b931b3f3eb6bb4c1d2f6",
     # Pin to platforms you care about; these are common.
     platforms = [
         "linux/amd64",
-        "linux/arm64",
     ],
-    # For reproducibility, prefer a digest. Using a tag here for simplicity.
-    tag = "latest",
 )
-use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64")
+use_repo(oci, "distroless_base", "distroless_base_linux_amd64")
