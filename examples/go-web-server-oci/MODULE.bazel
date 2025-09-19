@@ -1,0 +1,30 @@
+module(
+    name = "bg",
+)
+
+# Core deps
+bazel_dep(name = "rules_go", version = "0.57.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+
+# Configure Go toolchains (download a Go SDK)
+go = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go.download(version = "1.22.6")
+use_repo(go, "go_host_compatible_sdk_label", "go_toolchains", "io_bazel_rules_nogo")
+register_toolchains("@go_toolchains//:all")
+
+# OCI toolchains are registered by rules_oci's own MODULE, but we still
+# declare the base image we’ll use for the example.
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless_base",
+    image = "gcr.io/distroless/base",
+    # Pin to platforms you care about; these are common.
+    platforms = [
+        "linux/amd64",
+        "linux/arm64",
+    ],
+    # For reproducibility, prefer a digest. Using a tag here for simplicity.
+    tag = "latest",
+)
+use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64")

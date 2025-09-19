@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+# Build the Go echo server binary
+go_binary(
+    name = "echo_server",
+    srcs = ["main.go"],
+    # Arbitrary importpath for a main package without external deps
+    importpath = "example.com/echo",
+)
+
+# Package the binary into a tar layer at the root
+pkg_tar(
+    name = "echo_server.tar",
+    srcs = [":echo_server"],
+)
+
+# Build an OCI image using a distroless base
+oci_image(
+    name = "echo_server_image",
+    base = "@distroless_base",
+    tars = [":echo_server.tar"],
+    entrypoint = ["/echo_server"],
+    exposed_ports = ["8080"],
+    # Optionally add labels, env, etc.
+)
+
+# Optional: loader to import the image into Docker/Podman via `bazel run`
+oci_load(
+    name = "echo_server_image.load",
+    image = ":echo_server_image",
+    repo_tags = ":echo_server_image_tags",
+)
+
+genrule(
+    name = "echo_server_image_tags",
+    outs = ["echo_server_image.tags.txt"],
+    cmd = "echo examples/go-web-server-oci:echo_server | sed 's|:|/|g' > $@",
+)
+
